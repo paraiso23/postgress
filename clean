@@ -1,0 +1,27 @@
+const { Client } = require('pg');
+
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
+(async () => {
+  try {
+    await client.connect();
+    console.log("Connected!");
+
+    console.log("Deleting old executions...");
+    await client.query(`DELETE FROM execution_entity WHERE "startedAt" < NOW() - INTERVAL '7 days'`);
+
+    console.log("Running VACUUM FULL...");
+    await client.query(`VACUUM FULL`);
+
+    console.log("Cleanup complete.");
+  } catch (err) {
+    console.error("Error:", err);
+  } finally {
+    await client.end();
+  }
+})();
+
+
